@@ -1,0 +1,128 @@
+---
+title: "powerRangers"
+author: "Lily-Rose"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Hello, World. This is my first attempt at participating in tidytuesday, with a dataset on the Power Rangers franchise.
+
+```{r}
+
+library(tidyverse)
+
+power_rangers_episodes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-08-27/power_rangers_episodes.csv')
+power_rangers_seasons <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-08-27/power_rangers_seasons.csv')
+```
+
+### Top 25 most popular Power Rangers episodes
+It looks like Beast Morphers, Lost Galaxy and Time Force have the most popular episodes.
+```{r}
+power_rangers_episodes %>%
+  arrange(desc(IMDB_rating)) %>%
+  head(25) %>%
+  ggplot(aes(fct_reorder(episode_title, IMDB_rating), IMDB_rating, fill = season_title)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "", y = "IMDb rating", title = "Highest rated episodes")
+
+```
+
+### Top 25 least popular Power Rangers episodes
+It looks like Turbo, Zeo and Mighty Morphin have the least popular episodes.
+```{r}
+power_rangers_episodes %>%
+  arrange(desc(IMDB_rating)) %>%
+  tail(25) %>%
+  ggplot(aes(fct_rev(fct_reorder(episode_title, IMDB_rating)), IMDB_rating, fill = season_title)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "", y = "IMDb rating", title = "Lowest rated episodes")
+```
+
+### Highest rated seasons
+
+```{r}
+power_rangers_episodes %>%
+  ggplot(aes(fct_reorder(season_title, IMDB_rating), IMDB_rating)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = "", y = "IMDb rating", title = "Highest rated seasons")
+
+```
+
+### Ratings overtime
+Ratings have increased overtime, especially in the 90s and late 2010s
+```{r}
+power_rangers_episodes %>%
+  group_by(year = floor(year(air_date))) %>%
+  summarise(average_rating = mean(IMDB_rating, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = average_rating)) +
+  geom_line() +
+  geom_smooth() +
+  labs(x = "Year", y = "Average IMDb Rating", title = "Average IMDb Rating by year")
+
+```
+
+### Average number of ratings per year
+The number of people leaving ratings falls off heavily during the 90s and early 2000s, and then stabilises until the present. I'm unsure if this was a general trend in the industry, or specific to the Power Rangers franchise.
+
+```{r}
+power_rangers_episodes %>%
+  group_by(year = floor(year(air_date))) %>%
+  summarise(total_votes = mean(total_votes, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = total_votes)) +
+  geom_line() +
+  labs(x = "Year", y = "Average num of ratings", title = "Average num of ratings per year")
+
+```
+
+### Ratings by producer
+Ratings are fairly consistent across all producers
+
+```{r}
+power_rangers_seasons %>%
+  group_by(producer) %>%
+  summarise(rating = mean(IMDB_rating)) %>%
+  ggplot(aes(rating, producer)) +
+  geom_col() +
+  coord_flip()
+```
+
+### Season length by season ratings
+Ratings somewhat increased as season length increased, up to about 40-45 episodes, and then slowly decreased
+
+```{r}
+power_rangers_seasons %>%
+  ggplot(aes(number_of_episodes, IMDB_rating)) +
+  geom_point() +
+  geom_smooth() +
+  expand_limits(y = 0)
+```
+
+### Season length by episode ratings
+When we look at episode ratings we see a slightly different story, with ratings being fairly consistent up until about 40-45 episodes in, where it begins to decrease slightly.
+
+```{r}
+power_rangers_episodes %>%
+  ggplot(aes(episode_num, IMDB_rating)) +
+  geom_jitter() +
+  geom_smooth() +
+  expand_limits(y = 0)
+```
+
+
+### Ratings per show
+Most seasons have some ups and downs, but Super Samurai, In Space, Lost Galaxy and Mighty Morphin, seem to have more ratings variability than some other shows.
+```{r}
+power_rangers_episodes %>%
+  ggplot(aes(episode_num, IMDB_rating)) +
+  geom_line() +
+  facet_wrap(~season_title, scales = "free_x")
+```
+
